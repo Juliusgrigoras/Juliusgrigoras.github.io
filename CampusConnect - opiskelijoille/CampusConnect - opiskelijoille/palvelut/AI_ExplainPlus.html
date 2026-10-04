@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="fi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Explain+ — Standalone</title>
+  <style>
+    :root {
+      --bg: #0e0e0e;
+      --panel: #131313;
+      --panel-strong: #1a1b22;
+      --panel-soft: #15161a;
+      --border: #2a2c34;
+      --muted: #a1a1aa;
+      --text: #ffffff;
+      --brand: #1d65f5;
+      --brand-hover: #1552cc;
+      --success: #22c55e;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Roboto Flex", Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+      background: var(--bg);
+    }
+
+    .topbar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-left, .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #1b1c1f;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: var(--brand);
+    }
+
+    .brand-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-name .accent {
+      color: var(--brand);
+    }
+
+    .brand-subtitle {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .top-nav {
+      display: flex;
+      gap: 8px;
+      padding: 4px;
+      background: #1a1b1e;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .top-nav button,
+    .nav-btn,
+    .sidebar-nav button,
+    .suggestion-btn,
+    .topic-item,
+    .primary-btn,
+    .inline-action,
+    .send-btn,
+    .new-query-btn,
+    .history-card,
+    .modal-option,
+    .close-btn {
+      transition: all 0.2s ease;
+    }
+
+    .top-nav button,
+    .nav-btn {
+      border: none;
+      background: transparent;
+      color: #d4d4d8;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .top-nav button.active,
+    .nav-btn.active {
+      background: var(--brand);
+      color: white;
+    }
+
+    .top-nav button:hover:not(.active),
+    .nav-btn:hover:not(.active) {
+      background: rgba(255,255,255,0.05);
+      color: white;
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #1b1c20;
+      color: var(--text);
+    }
+
+    .main-layout {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .new-query-btn {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      background: var(--brand);
+      color: white;
+      padding: 12px 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 12px 32px rgba(29, 101, 245, 0.25);
+    }
+
+    .new-query-btn:hover {
+      background: var(--brand-hover);
+    }
+
+    .sidebar-section-title {
+      padding: 0 12px;
+      margin: 18px 0 8px;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-nav button {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: #d4d4d8;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .sidebar-nav button.active {
+      background: #1e2025;
+      border-color: #2d3038;
+      color: white;
+    }
+
+    .sidebar-nav button:hover:not(.active) {
+      background: #1a1b1f;
+      color: white;
+    }
+
+    .topic-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .topic-item {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .topic-item:hover {
+      background: #1a1b1f;
+      color: white;
+    }
+
+    .model-box {
+      background: #18191d;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .model-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand);
+      box-shadow: 0 0 12px rgba(29, 101, 245, 0.8);
+    }
+
+    .model-name {
+      font-weight: 700;
+    }
+
+    .model-subtext {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .content {
+      flex: 1;
+      overflow: auto;
+      background: var(--bg);
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    .home-page {
+      max-width: 1100px;
+    }
+
+    .hero {
+      max-width: 760px;
+      margin: 0 auto 32px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #1c1d22;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #d4d4d8;
+    }
+
+    .badge-accent {
+      color: #60a5fa;
+      font-weight: 700;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand);
+    }
+
+    .hero h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(2.5rem, 3vw, 4rem);
+      line-height: 1.05;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0 auto 28px;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .search-box {
+      background: #15161a;
+      border: 1px solid #2c2e36;
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 18px 38px rgba(0,0,0,0.2);
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: #71717a;
+    }
+
+    .search-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inline-action, .primary-btn {
+      border-radius: 12px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      background: #202228;
+      color: #d4d4d8;
+    }
+
+    .primary-btn {
+      border: none;
+      background: var(--brand);
+      color: white;
+      font-weight: 600;
+    }
+
+    .primary-btn:hover {
+      background: var(--brand-hover);
+    }
+
+    .suggestion-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .suggestion-btn {
+      border: 1px solid #2a2c34;
+      background: #18191d;
+      color: #d4d4d8;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .suggestion-btn:hover {
+      border-color: rgba(29, 101, 245, 0.6);
+      color: white;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .metric-card {
+      background: #141518;
+      border: 1px solid #24262c;
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .metric-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(29, 101, 245, 0.1);
+      border: 1px solid rgba(29, 101, 245, 0.2);
+      display: grid;
+      place-items: center;
+      color: var(--brand);
+    }
+
+    .metric-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 28px;
+      margin-top: 28px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #22242a;
+      margin-bottom: 10px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .section-head span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-card {
+      position: relative;
+      background: #15161a;
+      border: 1px solid #26282e;
+      border-radius: 18px;
+      padding: 18px 18px 18px 22px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .history-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--brand);
+    }
+
+    .history-card:hover {
+      background: #1c1d22;
+      border-color: var(--brand);
+    }
+
+    .history-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .history-tag-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .tag.blue {
+      background: rgba(29, 101, 245, 0.12);
+      color: #60a5fa;
+      border: 1px solid rgba(96,165,250,0.18);
+    }
+
+    .tag.purple {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(192,132,252,0.18);
+    }
+
+    .inline-pill {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(29,101,245,0.1);
+      color: #60a5fa;
+      font-size: 10px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(96,165,250,0.18);
+    }
+
+    .history-card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .history-card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .history-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid #22242a;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .card-link {
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .insight-box, .panel-box {
+      background: #141518;
+      border: 1px solid #24262c;
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .insight-box {
+      background: linear-gradient(180deg, #181a22 0%, #14151a 100%);
+      border-color: #2b2d38;
+      box-shadow: 0 20px 26px rgba(0,0,0,0.16);
+    }
+
+    .insight-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .insight-box h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .insight-box p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .full-width { width: 100%; }
+
+    .title-stack {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-stack h3 {
+      margin: 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-green {
+      color: #4ade80;
+      font-size: 10px;
+    }
+
+    .source-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 12px;
+      color: #d4d4d8;
+    }
+
+    .chat-page {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #25262c;
+      margin-bottom: 20px;
+    }
+
+    .chat-header-left, .chat-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chat-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chat-breadcrumb .trail {
+      color: white;
+      font-weight: 600;
+    }
+
+    .chat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(29,101,245,0.12);
+      border: 1px solid rgba(29,101,245,0.2);
+      color: #60a5fa;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .chat-user {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .chat-bubble {
+      max-width: 680px;
+      background: #1c1d22;
+      border: 1px solid #2d303a;
+      border-radius: 18px 18px 4px 18px;
+      padding: 18px;
+    }
+
+    .chat-bubble .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .chat-bubble .meta .user {
+      color: #60a5fa;
+      font-weight: 700;
+    }
+
+    .answer-shell {
+      background: #141519;
+      border: 1px solid #282a33;
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #23252d;
+    }
+
+    .answer-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ai-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: var(--brand);
+      display: grid;
+      place-items: center;
+      color: white;
+      box-shadow: 0 12px 28px rgba(29,101,245,0.35);
+    }
+
+    .answer-title h2 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .subtle-text {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .answer-confidence {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .claim-grid {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 20px;
+      margin-top: 22px;
+    }
+
+    .claim-box {
+      background: #1a1b22;
+      border: 1px solid #2f323c;
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 220px;
+    }
+
+    .claim-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .claim-tag {
+      border-radius: 8px;
+      background: rgba(29, 101, 245, 0.1);
+      color: #60a5fa;
+      padding: 6px 10px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+
+    .fact-button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(29,101,245,0.3);
+    }
+
+    .claim-box p {
+      font-size: 1rem;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .claim-box .details {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      border-top: 1px solid #292c36;
+      margin-top: 18px;
+      padding-top: 16px;
+      color: #d4d4d8;
+      font-size: 12px;
+    }
+
+    .visual-box {
+      border: 1px solid #2b2d38;
+      border-radius: 18px;
+      background: #17181f;
+      min-height: 220px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: end;
+      padding: 18px;
+    }
+
+    .visual-box::before {
+      content: '';
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(29,101,245,0.22);
+      filter: blur(100px);
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .visual-box::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(17,18,22,1), rgba(17,18,22,0.35));
+    }
+
+    .visual-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .visual-title {
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .visual-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .reasoning-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .reason-card {
+      background: #17181f;
+      border: 1px solid #282a34;
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .reason-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .reason-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      color: white;
+    }
+
+    .reason-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .sources-toggle {
+      margin-top: 24px;
+      width: 100%;
+      border: 1px solid #2b2d38;
+      background: #1a1b22;
+      color: white;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: left;
+    }
+
+    .sources-drawer {
+      margin-top: 12px;
+      background: #111216;
+      border: 1px solid #23252d;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .source-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-bottom: 1px solid #1f2026;
+      padding-bottom: 10px;
+    }
+
+    .source-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .source-item strong {
+      color: white;
+    }
+
+    .source-item span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .chat-input-bar {
+      position: sticky;
+      bottom: 14px;
+      margin-top: 24px;
+      background: rgba(21,22,27,0.96);
+      border: 1px solid #2b2d37;
+      border-radius: 18px;
+      padding: 14px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 36px rgba(0,0,0,0.28);
+    }
+
+    .chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chat-input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .chat-input-row input::placeholder {
+      color: #71717a;
+    }
+
+    .chat-select {
+      background: #1e2027;
+      border: 1px solid #2f323c;
+      color: #d4d4d8;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .send-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: none;
+      background: var(--brand);
+      color: white;
+      display: grid;
+      place-items: center;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      width: min(92vw, 560px);
+      background: #181920;
+      border: 1px solid #2e313c;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #262832;
+      padding-bottom: 14px;
+      margin-bottom: 12px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .modal-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #d4d4d8;
+    }
+
+    .field-box, .field-select {
+      width: 100%;
+      background: #131418;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      color: white;
+    }
+
+    .field-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+    }
+
+    .theme-dot {
+      width: 12px;
+      height: 12px;
+      background: var(--brand);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #262832;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .modal-option {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-align: left;
+      background: #1e2028;
+      border: 1px solid #2c2f3b;
+      color: white;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .modal-option .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .modal-option .icon.blue { background: rgba(29,101,245,0.12); color: #60a5fa; }
+    .modal-option .icon.amber { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .modal-option .icon.green { background: rgba(34,197,94,0.12); color: #4ade80; }
+
+    .modal-option strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .modal-option span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background: #1f2129;
+      border: 1px solid #303340;
+      color: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      z-index: 1200;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 980px) {
+      .main-layout { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .metrics, .reasoning-grid, .claim-grid, .two-column { grid-template-columns: 1fr; }
+      .search-box { flex-wrap: wrap; }
+      .search-actions { width: 100%; justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand">
+          <div class="brand-mark">AI</div>
+          <div>
+            <div class="brand-name">AI Explain<span class="accent">+</span></div>
+            <div class="brand-subtitle">Analyysi &amp; Tieto</div>
+          </div>
+        </div>
+
+        <nav class="top-nav">
+          <button type="button" class="nav-btn active" data-view="home">Kotinäyttö</button>
+          <button type="button" class="nav-btn" data-view="chat">Keskustelu</button>
+          <button type="button" data-open-modal="settings">Asetukset</button>
+        </nav>
+      </div>
+
+      <div class="topbar-right">
+        <button type="button" class="icon-button" data-open-modal="settings" aria-label="Asetukset">⚙️</button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <aside class="sidebar">
+        <div>
+          <button type="button" class="new-query-btn" data-action="new-query">
+            <span>＋</span>
+            <span>Uusi kysely</span>
+          </button>
+
+          <div class="sidebar-section-title">Päävalikko</div>
+          <div class="sidebar-nav">
+            <button type="button" class="active" data-view="home">
+              <span>🏠</span>
+              <span>Kotinäyttö</span>
+            </button>
+            <button type="button" data-view="chat">
+              <span>💬</span>
+              <span>Keskustelu</span>
+            </button>
+            <button type="button" data-open-modal="settings">
+              <span>⚙️</span>
+              <span>Asetukset</span>
+            </button>
+          </div>
+
+          <div class="sidebar-section-title">Suosikkiteemat</div>
+          <div class="topic-list">
+            <button type="button" class="topic-item" data-topic="Fuusioenergia">
+              <span>⚛️</span>
+              <span>Fuusioenergia</span>
+              <span>→</span>
+            </button>
+            <button type="button" class="topic-item" data-topic="Kvanttitietokoneet">
+              <span>💻</span>
+              <span>Kvanttitietokoneet</span>
+              <span>→</span>
+            </button>
+            <button type="button" class="topic-item" data-topic="Fotosynteesi">
+              <span>🌿</span>
+              <span>Fotosynteesi</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="model-box">
+          <div class="model-status">
+            <span>AI MALLI</span>
+            <span class="live-dot"></span>
+          </div>
+          <div class="model-name">Claude 3.5 Sonnet</div>
+          <div class="model-subtext">Syvällinen analyysi • V 2.4.0</div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section id="view-home" class="page home-page">
+          <div class="hero">
+            <div class="badge">
+              <span class="pulse"></span>
+              <span>Tiedonjäsentäjä v2.4</span>
+              <span class="badge-accent">• Valmiustilassa</span>
+            </div>
+
+            <h1>Tervehdys!</h1>
+            <p>
+              Mitä haluat selvittää tänään? AI Explain+ analysoi monimutkaiset aiheet
+              luotettavasti vertaisarvioitujen lähteiden avulla.
+            </p>
+
+            <div class="search-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M21 21L16.65 16.65M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <input id="home-query" class="search-input" type="text" placeholder="Kysy mitä vain tekoälyltä..." />
+              <div class="search-actions">
+                <button type="button" class="inline-action" data-open-modal="settings">Syväajattelu</button>
+                <button type="button" class="primary-btn" data-submit-home-query>Selitä</button>
+              </div>
+            </div>
+
+            <div class="suggestion-row">
+              <button type="button" class="suggestion-btn" data-question="Onko fuusioenergia mahdollista kaupallisessa mittakaavassa ennen vuotta 2040?">⚛️ Onko fuusioenergia mahdollista ennen 2040?</button>
+              <button type="button" class="suggestion-btn" data-question="Miten kvanttitietokone toimii ja miksi se mullistaa salauksen?">💻 Miten kvanttitietokone toimii?</button>
+              <button type="button" class="suggestion-btn" data-question="Mikä on fotosynteesin tarkka valo- ja pimeäreaktioiden dynamiikka?">🌿 Miten fotosynteesi toimii?</button>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric-card">
+              <div class="metric-icon">📦</div>
+              <div>
+                <div class="metric-value">24 Keskustelua</div>
+                <div class="metric-label">Tallennettu historiaan</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">⚡</div>
+              <div>
+                <div class="metric-value">0.4s</div>
+                <div class="metric-label">Keskimääräinen vastausnopeus</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">✅</div>
+              <div>
+                <div class="metric-value">98.4%</div>
+                <div class="metric-label">Luotettavuusindeksi</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="two-column">
+            <div class="history-list">
+              <div class="section-head">
+                <h2>Aiemmat kysymykset</h2>
+                <span>Näytä kaikki (24) →</span>
+              </div>
+
+              <div class="history-card" data-question="Onko fuusioenergia mahdollista kaupallisessa mittakaavassa ennen vuotta 2040?">
+                <div class="history-meta">
+                  <div class="history-tag-row">
+                    <span class="tag blue">Tiede &amp; Teknologia</span>
+                    <span>•</span>
+                    <span>Tänään 14:28</span>
+                  </div>
+                  <span class="inline-pill">98% luotettavuus</span>
+                </div>
+                <h3>Onko fuusioenergia mahdollista kaupallisessa mittakaavassa ennen vuotta 2040?</h3>
+                <p>ITER-reaktori ja useat yksityiset toimijat ovat edenneet magneettisen koossapidon testauksessa...</p>
+                <div class="history-footer">
+                  <span>3 lähdettä · 6 viestin ketju</span>
+                  <span class="card-link">Jatka keskustelua →</span>
+                </div>
+              </div>
+
+              <div class="history-card" data-question="Miten kvanttitietokone toimii ja miksi se mullistaa salauksen?">
+                <div class="history-meta">
+                  <div class="history-tag-row">
+                    <span class="tag purple">Teknologia</span>
+                    <span>•</span>
+                    <span>Eilen 18:45</span>
+                  </div>
+                  <span class="inline-pill">96% luotettavuus</span>
+                </div>
+                <h3>Miten kvanttitietokone toimii?</h3>
+                <p>Kvanttibitit hyödyntävät superpositiota ja lomittumista. Toisin kuin perinteinen transistori...</p>
+                <div class="history-footer">
+                  <span>4 lähdettä</span>
+                  <span class="card-link">Avaa analyysi →</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="side-panel">
+              <div class="insight-box">
+                <div class="insight-head">
+                  <span class="inline-pill">Päivän Oivallus</span>
+                  <span>💡</span>
+                </div>
+                <h3>Tekoälyn päättelyketjujen todentaminen</h3>
+                <p>Uusin tutkimus osoittaa, että askel askeleelta etenevä päättelyketju vähentää faktavirheitä...</p>
+                <button type="button" class="primary-btn full-width" data-question="Tee syväanalyysi aiheesta: Tekoälyn päättelyketjujen todentaminen ja Chain-of-Thought luotettavuus">
+                  Tee syväanalyysi
+                </button>
+              </div>
+
+              <div class="panel-box">
+                <div class="section-head" style="margin-bottom: 10px;">
+                  <div class="title-stack">
+                    <span>📚</span>
+                    <h3>Uusimmat lähteet</h3>
+                  </div>
+                  <span class="status-green">Indeksoitu tänään</span>
+                </div>
+                <div class="source-stack">
+                  <div>📄 Nature Physics: Topologiset suprajohteet</div>
+                  <div>🧬 Cell: Mitokondrioiden signaalireitit</div>
+                  <div>🛰️ IEEE: Muistipohjainen hermoverkkokiihdytin</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-chat" class="page chat-page hidden">
+          <div class="chat-header">
+            <div class="chat-header-left">
+              <button type="button" class="inline-action" data-view="home">← Takaisin</button>
+              <div class="chat-breadcrumb">
+                <span>Tiede &amp; Teknologia</span>
+                <span>›</span>
+                <span class="trail">Fuusioenergia</span>
+                <span class="chat-badge">Syväanalyysi valmis</span>
+              </div>
+            </div>
+
+            <div class="chat-header-actions">
+              <button type="button" class="inline-action">Jaa</button>
+              <button type="button" class="inline-action">Vie raportti</button>
+            </div>
+          </div>
+
+          <div class="chat-user">
+            <div class="chat-bubble">
+              <div class="meta">
+                <span class="user">Sinä</span>
+                <span>14:28</span>
+              </div>
+              <div id="chat-user-question-text">Onko fuusioenergia mahdollista kaupallisessa mittakaavassa ennen vuotta 2040?</div>
+            </div>
+          </div>
+
+          <div class="answer-shell">
+            <div class="answer-header">
+              <div class="answer-title">
+                <div class="ai-icon">⚡</div>
+                <div>
+                  <h2>Vastaus ja synteesi</h2>
+                  <div class="subtle-text">Lähdevertailtu 14 riippumattoman tutkimuspaperin pohjalta</div>
+                </div>
+              </div>
+
+              <div class="answer-confidence">
+                <span>✔</span>
+                <span>98% varmuus</span>
+              </div>
+            </div>
+
+            <div class="claim-grid">
+              <div class="claim-box">
+                <div class="claim-top">
+                  <span class="claim-tag">Ydinväite</span>
+                  <button type="button" class="fact-button" data-open-modal="factcheck">!</button>
+                </div>
+
+                <p>
+                  Fuusioenergian kaupallinen käyttöönotto ennen vuotta 2040 on
+                  <strong style="color: #60a5fa;">erittäin epätodennäköistä</strong>,
+                  mutta useat koereaktorit saavuttavat pitkäkestoista nettovoittoa (Q &gt; 1)
+                  2030-luvun aikana.
+                </p>
+
+                <div class="details">
+                  <span>Ennusteikkuna: 2045–2055</span>
+                  <span>Tieteellinen konsensus: 91%</span>
+                </div>
+              </div>
+
+              <div class="visual-box">
+                <div class="visual-content">
+                  <div class="inline-pill">Visualisointi</div>
+                  <div class="visual-title">ITER Tokamak &amp; Magneettikenttä</div>
+                  <div class="visual-subtitle">Cadarache, Ranska • D-T Plasmapoltto</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="reasoning-grid">
+              <div class="reason-card">
+                <div class="reason-head">
+                  <span>1. Aikataulu</span>
+                  <span>⏱️</span>
+                </div>
+                <h4>ITER-hankkeen aikataulut</h4>
+                <p>Maailman suurin tutkimustokamak ITER on siirtänyt täyden tehon kokeet vuoteen 2035...</p>
+              </div>
+
+              <div class="reason-card">
+                <div class="reason-head">
+                  <span>2. Materiaalit</span>
+                  <span>🧱</span>
+                </div>
+                <h4>Magneettinen eristys</h4>
+                <p>Plasman pitkäkestoinen stabilointi vaatii ratkaisemattomia materiaali-innovaatioita...</p>
+              </div>
+
+              <div class="reason-card">
+                <div class="reason-head">
+                  <span>3. Skaalaus</span>
+                  <span>📈</span>
+                </div>
+                <h4>Investointien mittakaava</h4>
+                <p>Kaupallisen prototyyppivoimalaitoksen vaatima pääoma ja toimitusketju ovat edelleen puutteellisia...</p>
+              </div>
+            </div>
+
+            <button type="button" class="sources-toggle" data-toggle-sources>
+              <span>Tarkastele lähteitä (3 vahvistettua lähdettä)</span>
+              <span>▼</span>
+            </button>
+
+            <div class="sources-drawer hidden">
+              <div class="source-item">
+                <strong>[1] ITER Baseline Strategy Update (2024)</strong>
+                <span>Virallinen projektiaikataulu</span>
+              </div>
+              <div class="source-item">
+                <strong>[2] Nature Physics: Materials under extreme neutron irradiation</strong>
+                <span>Vertaisarvioitu tutkimus</span>
+              </div>
+              <div class="source-item">
+                <strong>[3] IAEA World Fusion Outlook 2024</strong>
+                <span>Kansainvälinen raportti</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-input-bar">
+            <div class="chat-input-row">
+              <button type="button" class="inline-action">📎</button>
+              <input type="text" id="followup-input" placeholder="Kysy jatkokysymys fuusioenergiasta..." />
+              <select class="chat-select">
+                <option>Claude 3.5 Sonnet</option>
+                <option>GPT-4o</option>
+                <option>DeepSeek R1</option>
+              </select>
+              <button type="button" class="send-btn" data-submit-followup>➤</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-settings" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ Sovelluksen asetukset</h3>
+        <button type="button" class="inline-action close-btn" data-close-modal="settings">✕</button>
+      </div>
+
+      <div class="modal-stack">
+        <div>
+          <label class="field-label">Teema ja väri</label>
+          <div class="field-box">
+            <span>Tumma tila</span>
+            <span class="theme-dot"></span>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label">Ensisijainen tekoälymalli</label>
+          <select class="field-select">
+            <option>Claude 3.5 Sonnet</option>
+            <option>GPT-4o</option>
+            <option>DeepSeek R1</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="primary-btn" data-close-modal="settings">Tallenna ja sulje</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-factcheck" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Väitteen arviointi ja palaute</h3>
+        <button type="button" class="inline-action close-btn" data-close-modal="factcheck">✕</button>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-option" data-action="re-evaluate">
+          <div class="icon blue">🔄</div>
+          <div>
+            <strong>Pyydä uudelleen perustelua</strong>
+            <span>Analysoi väite vaihtoehtoisten näkökulmien kautta.</span>
+          </div>
+        </button>
+
+        <button type="button" class="modal-option" data-action="flag">
+          <div class="icon amber">⚠️</div>
+          <div>
+            <strong>Ilmoita virheellisestä vastauksesta</strong>
+            <span>Korjaa ristiriitainen tai vanhentunut tieto.</span>
+          </div>
+        </button>
+
+        <button type="button" class="modal-option" data-action="sources">
+          <div class="icon green">📚</div>
+          <div>
+            <strong>Tarkasta lähdeviittaukset</strong>
+            <span>Avataan DOI- ja lähdeviittaukset tarkemmin.</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="inline-action" data-close-modal="factcheck">Sulje</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <span>✓</span>
+    <span class="toast-message">Toiminto suoritettu</span>
+  </div>
+
+  <script>
+    const state = { currentView: 'home' };
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const text = toast.querySelector('.toast-message');
+      text.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    function setView(view) {
+      state.currentView = view;
+      const home = document.getElementById('view-home');
+      const chat = document.getElementById('view-chat');
+      const isHome = view === 'home';
+
+      home.classList.toggle('hidden', !isHome);
+      chat.classList.toggle('hidden', isHome);
+
+      document.querySelectorAll('[data-view]').forEach(button => {
+        const active = button.dataset.view === view;
+        button.classList.toggle('active', active);
+      });
+    }
+
+    function openQuestion(question) {
+      const chatQuestion = document.getElementById('chat-user-question-text');
+      if (chatQuestion) chatQuestion.textContent = question;
+      const breadcrumb = document.querySelector('.chat-breadcrumb .trail');
+      if (breadcrumb) {
+        const lower = question.toLowerCase();
+        if (lower.includes('fuusio')) breadcrumb.textContent = 'Fuusioenergia';
+        else if (lower.includes('kvant')) breadcrumb.textContent = 'Kvanttitietokoneet';
+        else if (lower.includes('fotosyn')) breadcrumb.textContent = 'Biologia';
+        else breadcrumb.textContent = 'Yleinen analyysi';
+      }
+      setView('chat');
+      showToast('Avattiin kysymys');
+    }
+
+    function handleHomeQuery() {
+      const input = document.getElementById('home-query');
+      if (!input) return;
+      const value = input.value.trim();
+      if (!value) return;
+      openQuestion(value);
+      input.value = '';
+    }
+
+    function handleFollowup() {
+      const input = document.getElementById('followup-input');
+      if (!input) return;
+      const value = input.value.trim();
+      if (!value) return;
+      input.value = '';
+      showToast('Analysoidaan jatkokysymystä');
+    }
+
+    function toggleModal(id, show) {
+      const modal = document.getElementById('modal-' + id);
+      if (!modal) return;
+      modal.classList.toggle('hidden', !show);
+    }
+
+    document.addEventListener('click', (event) => {
+      const viewButton = event.target.closest('[data-view]');
+      if (viewButton) {
+        setView(viewButton.dataset.view);
+        return;
+      }
+
+      const q = event.target.closest('[data-question]');
+      if (q) {
+        openQuestion(q.dataset.question);
+        return;
+      }
+
+      const topic = event.target.closest('[data-topic]');
+      if (topic) {
+        const map = {
+          Fuusioenergia: 'Onko fuusioenergia mahdollista kaupallisessa mittakaavassa ennen vuotta 2040?',
+          Kvanttitietokoneet: 'Miten kvanttitietokone toimii ja miksi se mullistaa salauksen?',
+          Fotosynteesi: 'Mikä on fotosynteesin tarkka biokemiallinen mekanismi?'
+        };
+        openQuestion(map[topic.dataset.topic] || topic.dataset.topic);
+        return;
+      }
+
+      const submitHome = event.target.closest('[data-submit-home-query]');
+      if (submitHome) {
+        handleHomeQuery();
+        return;
+      }
+
+      const submitFollowup = event.target.closest('[data-submit-followup]');
+      if (submitFollowup) {
+        handleFollowup();
+        return;
+      }
+
+      const openModal = event.target.closest('[data-open-modal]');
+      if (openModal) {
+        toggleModal(openModal.dataset.openModal, true);
+        return;
+      }
+
+      const closeModal = event.target.closest('[data-close-modal]');
+      if (closeModal) {
+        toggleModal(closeModal.dataset.closeModal, false);
+        return;
+      }
+
+      const toggleSources = event.target.closest('[data-toggle-sources]');
+      if (toggleSources) {
+        document.querySelector('.sources-drawer').classList.toggle('hidden');
+        return;
+      }
+
+      const newQuery = event.target.closest('[data-action="new-query"]');
+      if (newQuery) {
+        setView('home');
+        const input = document.getElementById('home-query');
+        if (input) {
+          input.focus();
+          input.placeholder = 'Kirjoita uusi kysymys...';
+        }
+        showToast('Valmis uuteen kyselyyn');
+      }
+
+      if (event.target.closest('[data-action="re-evaluate"]')) {
+        showToast('Käsitellään pyyntöä');
+      }
+    });
+
+    document.getElementById('home-query').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') handleHomeQuery();
+    });
+
+    document.getElementById('followup-input').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') handleFollowup();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        toggleModal('settings', false);
+        toggleModal('factcheck', false);
+      }
+    });
+
+    setView('home');
+  </script>
+</body>
+</html>
